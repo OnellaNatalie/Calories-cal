@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personalized Workout & Nutrition Dashboard</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+              accent: '#3b82f6',
+              accent2: '#f59e0b'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1f2937;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #374151;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #4b5563;
+    }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen flex flex-col md:flex-row antialiased">
+
+  <!-- MOBILE HEADER / TOGGLE -->
+  <div class="md:hidden bg-gray-900 border-b border-gray-800 p-4 flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center space-x-2">
+      <i data-lucide="dumbbell" class="w-6 h-6 text-brand-500"></i>
+      <span class="font-bold text-lg tracking-wider bg-gradient-to-r from-brand-500 to-brand-accent bg-clip-text text-transparent">FitPulse Pro</span>
+    </div>
+    <button id="mobileMenuBtn" class="p-2 text-gray-400 hover:text-white focus:outline-none">
+      <i data-lucide="menu" class="w-6 h-6"></i>
+    </button>
+  </div>
+
+  <!-- SIDEBAR CONTROLS & PROFILE INPUTS -->
+  <aside id="sidebar" class="hidden md:flex flex-col w-full md:w-80 lg:w-96 bg-gray-900 border-r border-gray-800 p-6 flex-shrink-0 space-y-6 overflow-y-auto max-h-screen">
+    <div class="flex items-center space-x-3 pb-2 border-b border-gray-800">
+      <div class="p-2 bg-brand-500/10 rounded-lg text-brand-500">
+        <i data-lucide="dumbbell" class="w-7 h-7"></i>
+      </div>
+      <div>
+        <h1 class="font-bold text-xl tracking-wider text-white">FitPulse Pro</h1>
+        <p class="text-xs text-gray-400">Workout & Nutrition Engine</p>
+      </div>
+    </div>
+
+    <!-- USER PROFILE SETUP -->
+    <div class="space-y-4">
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-2">
+        <i data-lucide="user-cog" class="w-4 h-4 text-brand-500"></i> User Profile
+      </h2>
+
+      <!-- Gender -->
+      <div>
+        <label class="block text-xs font-medium text-gray-300 mb-1">Gender</label>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" onclick="setProfile('gender', 'male')" id="btn-male" class="gender-btn flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-gray-700 bg-gray-800 text-sm font-medium hover:bg-gray-700 transition">
+            <i data-lucide="mars" class="w-4 h-4 text-blue-400"></i> Male
+          </button>
+          <button type="button" onclick="setProfile('gender', 'female')" id="btn-female" class="gender-btn flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-gray-700 bg-gray-800 text-sm font-medium hover:bg-gray-700 transition">
+            <i data-lucide="venus" class="w-4 h-4 text-pink-400"></i> Female
+          </button>
+        </div>
+      </div>
+
+      <!-- Goal -->
+      <div>
+        <label class="block text-xs font-medium text-gray-300 mb-1">Primary Goal</label>
+        <select id="inputGoal" onchange="updateProfileState()" class="w-full bg-gray-800 border border-gray-700 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-brand-500">
+          <option value="skinny">Skinny / Weight Gain (6 Ex/day)</option>
+          <option value="bulking">Bulking / Muscle Gain (7 Ex/day)</option>
+          <option value="fatloss">Fat Loss + Cardio (6 Ex/day)</option>
+        </select>
+      </div>
+
+      <!-- Level -->
+      <div>
+        <label class="block text-xs font-medium text-gray-300 mb-1">Fitness Level</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" onclick="setProfile('level', 'beginner')" id="btn-beginner" class="level-btn py-2 px-2 text-xs rounded-lg border border-gray-700 bg-gray-800 font-medium hover:bg-gray-700 transition text-center">Beginner</button>
+          <button type="button" onclick="setProfile('level', 'medium')" id="btn-medium" class="level-btn py-2 px-2 text-xs rounded-lg border border-gray-700 bg-gray-800 font-medium hover:bg-gray-700 transition text-center">Medium</button>
+          <button type="button" onclick="setProfile('level', 'advanced')" id="btn-advanced" class="level-btn py-2 px-2 text-xs rounded-lg border border-gray-700 bg-gray-800 font-medium hover:bg-gray-700 transition text-center">Advanced</button>
+        </div>
+      </div>
+
+      <!-- Female Focus Option -->
+      <div id="femaleFocusContainer" class="hidden">
+        <label class="block text-xs font-medium text-pink-400 mb-1 flex items-center gap-1">
+          <i data-lucide="sparkles" class="w-3 h-3"></i> Female Focus Strategy
+        </label>
+        <select id="inputFemaleFocus" onchange="updateProfileState()" class="w-full bg-gray-800 border border-pink-900/50 rounded-lg py-2 px-3 text-sm text-pink-200 focus:outline-none focus:border-pink-500">
+          <option value="glutes">Glutes-Focused Lower Body</option>
+          <option value="standard">Standard Leg Routine</option>
+        </select>
+      </div>
+
+      <!-- Physical Metrics -->
+      <div class="pt-2 border-t border-gray-800 space-y-3">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-2">
+          <i data-lucide="calculator" class="w-4 h-4 text-brand-500"></i> Body Stats & Metrics
+        </h3>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Age</label>
+            <input type="number" id="inputAge" value="25" min="15" max="80" onchange="calculateMetrics()" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm text-center focus:outline-none focus:border-brand-500">
+          </div>
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Height (cm)</label>
+            <input type="number" id="inputHeight" value="175" min="120" max="230" onchange="calculateMetrics()" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm text-center focus:outline-none focus:border-brand-500">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Weight (kg)</label>
+            <input type="number" id="inputWeight" value="70" min="30" max="200" onchange="calculateMetrics()" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm text-center focus:outline-none focus:border-brand-500">
+          </div>
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Activity Level</label>
+            <select id="inputActivity" onchange="calculateMetrics()" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs focus:outline-none focus:border-brand-500">
+              <option value="1.2">Sedentary</option>
+              <option value="1.375" selected>Lightly Active</option>
+              <option value="1.55">Moderately Active</option>
+              <option value="1.725">Very Active</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-auto pt-4 border-t border-gray-800 text-xs text-gray-500 text-center">
+      Dynamic Routine & Dynamic Form Links Enabled
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-1 p-4 md:p-8 overflow-y-auto space-y-8">
+
+    <!-- METRICS & CALCULATORS SECTION -->
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <!-- BMI Card -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+        <div>
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-xs font-semibold uppercase text-gray-400 flex items-center gap-2">
+              <i data-lucide="scale" class="w-4 h-4 text-brand-500"></i> BMI Score
+            </span>
+            <span id="bmiCategoryBadge" class="text-xs font-bold px-2.5 py-1 rounded-full bg-brand-500/10 text-brand-500 border border-brand-500/20">
+              Normal
+            </span>
+          </div>
+          <div class="flex items-baseline space-x-2 my-2">
+            <span id="bmiVal" class="text-4xl font-extrabold text-white">22.9</span>
+            <span class="text-xs text-gray-400">kg/m²</span>
+          </div>
+        </div>
+
+        <!-- BMI Status Gauge -->
+        <div class="mt-4">
+          <div class="h-2 w-full bg-gray-800 rounded-full overflow-hidden flex">
+            <div class="h-full bg-blue-500 w-1/4" title="Underweight (<18.5)"></div>
+            <div class="h-full bg-emerald-500 w-1/4" title="Normal (18.5-24.9)"></div>
+            <div class="h-full bg-amber-500 w-1/4" title="Overweight (25-29.9)"></div>
+            <div class="h-full bg-red-500 w-1/4" title="Obese (30+)"></div>
+          </div>
+          <div class="relative w-full h-3">
+            <div id="bmiIndicator" class="absolute top-0 w-2.5 h-2.5 -ml-1 bg-white border-2 border-gray-900 rounded-full transition-all duration-300" style="left: 45%;"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-gray-500 mt-1">
+            <span>&lt;18.5</span>
+            <span>18.5-24.9</span>
+            <span>25-29.9</span>
+            <span>30+</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calorie TDEE Card -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-xs font-semibold uppercase text-gray-400 flex items-center gap-2">
+            <i data-lucide="flame" class="w-4 h-4 text-amber-500"></i> Energy Target
+          </span>
+          <span id="goalBadge" class="text-[11px] font-medium text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+            Maintenance
+          </span>
+        </div>
+        <div class="my-2">
+          <div class="text-3xl font-extrabold text-white" id="targetCaloriesVal">2,250 <span class="text-sm font-normal text-gray-400">kcal/day</span></div>
+          <p class="text-xs text-gray-400 mt-1">Maintenance (TDEE): <span id="tdeeVal" class="text-gray-200">2,100</span> kcal</p>
+        </div>
+        <div class="bg-gray-800/50 p-2.5 rounded-xl border border-gray-800 flex items-center gap-2 mt-2">
+          <i data-lucide="info" class="w-4 h-4 text-brand-accent flex-shrink-0"></i>
+          <p id="calorieTip" class="text-[11px] text-gray-300 leading-tight">Calculated specifically for your current target strategy.</p>
+        </div>
+      </div>
+
+      <!-- Macros Card -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between md:col-span-2 lg:col-span-1">
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-xs font-semibold uppercase text-gray-400 flex items-center gap-2">
+            <i data-lucide="pie-chart" class="w-4 h-4 text-blue-500"></i> Macro Split
+          </span>
+          <span class="text-xs text-gray-400">Daily Target</span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 text-center my-1">
+          <div class="bg-gray-800/60 p-2 rounded-xl border border-gray-800">
+            <span class="text-[10px] uppercase font-bold text-red-400">Protein</span>
+            <div class="text-lg font-bold text-white" id="macroProtein">140g</div>
+            <div class="text-[10px] text-gray-500" id="macroProteinPct">30%</div>
+          </div>
+          <div class="bg-gray-800/60 p-2 rounded-xl border border-gray-800">
+            <span class="text-[10px] uppercase font-bold text-amber-400">Carbs</span>
+            <div class="text-lg font-bold text-white" id="macroCarbs">250g</div>
+            <div class="text-[10px] text-gray-500" id="macroCarbsPct">50%</div>
+          </div>
+          <div class="bg-gray-800/60 p-2 rounded-xl border border-gray-800">
+            <span class="text-[10px] uppercase font-bold text-blue-400">Fats</span>
+            <div class="text-lg font-bold text-white" id="macroFats">60g</div>
+            <div class="text-[10px] text-gray-500" id="macroFatsPct">20%</div>
+          </div>
+        </div>
+
+        <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden flex mt-3">
+          <div id="barProtein" class="bg-red-500 h-full" style="width: 30%"></div>
+          <div id="barCarbs" class="bg-amber-500 h-full" style="width: 50%"></div>
+          <div id="barFats" class="bg-blue-500 h-full" style="width: 20%"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ROUTINE NAVIGATION & HEADER -->
+    <section class="space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-gray-800">
+        <div>
+          <h2 class="text-2xl font-bold text-white tracking-wide flex items-center gap-2">
+            <i data-lucide="calendar" class="w-6 h-6 text-brand-500"></i>
+            Weekly Workout Routine
+          </h2>
+          <p class="text-sm text-gray-400 mt-0.5" id="routineSubtitle">
+            Tailored Split • 6 Exercises per Session
+          </p>
+        </div>
+
+        <!-- Day Tabs -->
+        <div class="flex bg-gray-900 p-1 rounded-xl border border-gray-800 self-start sm:self-auto overflow-x-auto max-w-full">
+          <button onclick="switchDay(1)" id="tab-day1" class="day-tab px-4 py-2 text-xs font-semibold rounded-lg transition whitespace-nowrap">Day 1: Chest & Biceps</button>
+          <button onclick="switchDay(2)" id="tab-day2" class="day-tab px-4 py-2 text-xs font-semibold rounded-lg transition whitespace-nowrap">Day 2: Back & Triceps</button>
+          <button onclick="switchDay(3)" id="tab-day3" class="day-tab px-4 py-2 text-xs font-semibold rounded-lg transition whitespace-nowrap">Day 3: Shoulders & Abs</button>
+          <button onclick="switchDay(4)" id="tab-day4" class="day-tab px-4 py-2 text-xs font-semibold rounded-lg transition whitespace-nowrap">Day 4: Legs</button>
+        </div>
+      </div>
+
+      <!-- Goal Specific Extra Recommendations (Cardio/Intensity for Fat loss) -->
+      <div id="fatLossNotice" class="hidden bg-gradient-to-r from-red-950/40 to-amber-950/40 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3">
+        <i data-lucide="zap" class="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5"></i>
+        <div class="text-xs">
+          <span class="font-bold text-amber-300 uppercase tracking-wider block mb-0.5">Fat Loss Protocol Active</span>
+          <p class="text-gray-300">Incorporate 20-30 minutes of High Intensity Interval Training (HIIT) or Incline Cardio post-workout to maximize caloric expenditure while keeping rest times between sets to 45-60 seconds.</p>
+        </div>
+      </div>
+
+      <!-- EXERCISE GRID CONTAINER -->
+      <div id="exerciseGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Dynamic Cards Inserted Here -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FORM PREVIEW MODAL -->
+  <div id="imageModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative">
+      <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+        <h3 id="modalExerciseTitle" class="font-bold text-white text-base">Exercise Form Guide</h3>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6 text-center space-y-4">
+        <div class="p-4 bg-gray-800/50 rounded-xl border border-gray-800 text-sm text-gray-300">
+          <p>You are viewing the demonstration link search for:</p>
+          <p id="modalExerciseSearchTerm" class="font-semibold text-brand-500 mt-1 text-base"></p>
+        </div>
+        <p class="text-xs text-gray-400">
+          Click below to open high-quality animated demonstration guides and image form breakdowns in a clean Google Images search view.
+        </p>
+        <a id="modalSearchBtn" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 w-full py-3 px-4 bg-brand-500 hover:bg-brand-600 text-gray-950 font-bold rounded-xl transition shadow-lg">
+          <i data-lucide="external-link" class="w-4 h-4"></i> View Form Images on Google
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // --- MASTER EXERCISE POOL (STRICT SELECTION) ---
+    const MASTER_POOL = {
+      CHEST: [
+        "Flat Bench Press", "Incline Bench Press", "Decline Bench Press", 
+        "Parallel Bar Dips", "Flat Bench Flyes", "Incline Flyes", 
+        "Cable Crossover", "Pullover", "Diamond Push-ups"
+      ],
+      BACK: [
+        "Front Chin-up", "Single-Arm Dumbbell Row", "Lat Pulldown (Front & Back)", 
+        "Cycle Rowing", "Cable Low Row", "Reverse Cable Rowing", 
+        "Floor Pulldown", "Back Windows"
+      ],
+      LEGS_MALE: [
+        "Deadlift", "Free Squat", "Half Squat", "Full Squat", 
+        "Sumo Leg Press", "Leg Press (Close Stance)", "Walking Lunges", 
+        "Leg Extension", "Leg Curl", "Bulgarian Split Squat", 
+        "Romanian Deadlift (RDL)", "Front Squat", "Standing Calf Raise"
+      ],
+      LEGS_GLUTES_FEMALE: [
+        "Hip Thrust", "Bulgarian Split Squat", "Romanian Deadlift (RDL)", 
+        "Sumo Squat", "Cable Kickbacks/Glute Bridges", "Walking Lunges", 
+        "Leg Curl", "Standing Calf Raise"
+      ],
+      SHOULDERS: [
+        "Front Shoulder Press", "Side Lateral Raises", "Front Raises", 
+        "Upright Row", "Bent-Over Rear Delt Row"
+      ],
+      BICEPS: [
+        "Dumbbell Curl", "Z-Bar / Straight Barbell Curl", "Preacher Curl", 
+        "Concentration Curl", "Reverse Curl", "Doorframe Biceps"
+      ],
+      TRICEPS: [
+        "Cable Pushdown", "Rope Pushdown", "Dumbbell Overhead Extension", 
+        "Lying-Down Straight Bar Extension", "Single-Arm Dumbbell Extension", "Cable Kickback"
+      ],
+      ABS: [
+        "Cable Crunch", "Hanging Leg Raise", "Bench Leg Raise", "Floor Leg Raise"
+      ]
+    };
+
+    // USER PROFILE STATE
+    let profile = {
+      gender: 'male', // 'male' | 'female'
+      goal: 'skinny', // 'skinny' | 'bulking' | 'fatloss'
+      level: 'medium', // 'beginner' | 'medium' | 'advanced'
+      femaleFocus: 'glutes', // 'glutes' | 'standard'
+      age: 25,
+      height: 175,
+      weight: 70,
+      activity: 1.375,
+      activeDay: 1
+    };
+
+    // INITIALIZATION
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      setupMobileMenu();
+      updateProfileUI();
+      calculateMetrics();
+      renderWorkoutDay();
+    });
+
+    function setupMobileMenu() {
+      const btn = document.getElementById('mobileMenuBtn');
+      const sidebar = document.getElementById('sidebar');
+      btn.addEventListener('click', () => {
+        sidebar.classList.toggle('hidden');
+      });
+    }
+
+    // UPDATE PROFILE STATE
+    function setProfile(key, val) {
+      profile[key] = val;
+      updateProfileUI();
+      calculateMetrics();
+      renderWorkoutDay();
+    }
+
+    function updateProfileState() {
+      profile.goal = document.getElementById('inputGoal').value;
+      if (profile.gender === 'female') {
+        profile.femaleFocus = document.getElementById('inputFemaleFocus').value;
+      }
+      calculateMetrics();
+      renderWorkoutDay();
+    }
+
+    function updateProfileUI() {
+      // Gender Buttons
+      document.querySelectorAll('.gender-btn').forEach(btn => {
+        btn.classList.remove('border-brand-500', 'bg-brand-500/10', 'text-brand-500');
+      });
+      const activeGenderBtn = document.getElementById(`btn-${profile.gender}`);
+      if (activeGenderBtn) {
+        activeGenderBtn.classList.add('border-brand-500', 'bg-brand-500/10', 'text-brand-500');
+      }
+
+      // Level Buttons
+      document.querySelectorAll('.level-btn').forEach(btn => {
+        btn.classList.remove('border-brand-500', 'bg-brand-500/10', 'text-brand-500');
+      });
+      const activeLevelBtn = document.getElementById(`btn-${profile.level}`);
+      if (activeLevelBtn) {
+        activeLevelBtn.classList.add('border-brand-500', 'bg-brand-500/10', 'text-brand-500');
+      }
+
+      // Female Focus Visibility
+      const femaleFocusContainer = document.getElementById('femaleFocusContainer');
+      if (profile.gender === 'female') {
+        femaleFocusContainer.classList.remove('hidden');
+      } else {
+        femaleFocusContainer.classList.add('hidden');
+      }
+
+      // Goal select syncing
+      document.getElementById('inputGoal').value = profile.goal;
+    }
+
+    // CALCULATORS (BMI & MACROS)
+    function calculateMetrics() {
+      profile.age = parseFloat(document.getElementById('inputAge').value) || 25;
+      profile.height = parseFloat(document.getElementById('inputHeight').value) || 175;
+      profile.weight = parseFloat(document.getElementById('inputWeight').value) || 70;
+      profile.activity = parseFloat(document.getElementById('inputActivity').value) || 1.375;
+
+      // 1. BMI Calculation
+      const heightInMeters = profile.height / 100;
+      const bmi = (profile.weight / (heightInMeters * heightInMeters)).toFixed(1);
+      document.getElementById('bmiVal').textContent = bmi;
+
+      // Gauge position & badge
+      const indicator = document.getElementById('bmiIndicator');
+      const badge = document.getElementById('bmiCategoryBadge');
+      
+      let category = "Normal";
+      let colorClass = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+      let posPct = 45;
+
+      if (bmi < 18.5) {
+        category = "Underweight";
+        colorClass = "bg-blue-500/10 text-blue-400 border-blue-500/20";
+        posPct = Math.max(5, (bmi / 18.5) * 25);
+      } else if (bmi >= 18.5 && bmi < 25) {
+        category = "Normal";
+        colorClass = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+        posPct = 25 + ((bmi - 18.5) / 6.5) * 25;
+      } else if (bmi >= 25 && bmi < 30) {
+        category = "Overweight";
+        colorClass = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+        posPct = 50 + ((bmi - 25) / 5) * 25;
+      } else {
+        category = "Obese";
+        colorClass = "bg-red-500/10 text-red-400 border-red-500/20";
+        posPct = Math.min(95, 75 + ((bmi - 30) / 10) * 25);
+      }
+
+      badge.textContent = category;
+      badge.className = `text-xs font-bold px-2.5 py-1 rounded-full border ${colorClass}`;
+      indicator.style.left = `${posPct}%`;
+
+      // 2. TDEE & Target Calories Calculation (Mifflin-St Jeor)
+      let bmr = (10 * profile.weight) + (6.25 * profile.height) - (5 * profile.age);
+      if (profile.gender === 'male') {
+        bmr += 5;
+      } else {
+        bmr -= 161;
+      }
+
+      const tdee = Math.round(bmr * profile.activity);
+      document.getElementById('tdeeVal').textContent = tdee.toLocaleString();
+
+      let targetCalories = tdee;
+      let goalBadgeText = "Maintenance";
+      let tipText = "Standard daily caloric intake to maintain current weight.";
+
+      if (profile.goal === 'skinny') {
+        targetCalories = tdee + 400;
+        goalBadgeText = "Caloric Surplus (+400)";
+        tipText = "Slight surplus strategy tailored to build lean weight consistently.";
+      } else if (profile.goal === 'bulking') {
+        targetCalories = tdee + 600;
+        goalBadgeText = "Bulking Surplus (+600)";
+        tipText = "Higher calorie intake designed for maximum muscle growth volume.";
+      } else if (profile.goal === 'fatloss') {
+        targetCalories = tdee - 500;
+        goalBadgeText = "Deficit Strategy (-500)";
+        tipText = "Moderate calorie deficit to maximize fat loss while preserving muscle.";
+      }
+
+      document.getElementById('targetCaloriesVal').innerHTML = `${targetCalories.toLocaleString()} <span class="text-sm font-normal text-gray-400">kcal/day</span>`;
+      document.getElementById('goalBadge').textContent = goalBadgeText;
+      document.getElementById('calorieTip').textContent = tipText;
+
+      // 3. Macros Breakdown
+      let pRatio = 0.3, cRatio = 0.5, fRatio = 0.2; // default
+      if (profile.goal === 'bulking') {
+        pRatio = 0.30; cRatio = 0.55; fRatio = 0.15;
+      } else if (profile.goal === 'fatloss') {
+        pRatio = 0.40; cRatio = 0.35; fRatio = 0.25;
+      } else if (profile.goal === 'skinny') {
+        pRatio = 0.25; cRatio = 0.55; fRatio = 0.20;
+      }
+
+      const pGrams = Math.round((targetCalories * pRatio) / 4);
+      const cGrams = Math.round((targetCalories * cRatio) / 4);
+      const fGrams = Math.round((targetCalories * fRatio) / 9);
+
+      document.getElementById('macroProtein').textContent = `${pGrams}g`;
+      document.getElementById('macroProteinPct').textContent = `${Math.round(pRatio * 100)}%`;
+      document.getElementById('macroCarbs').textContent = `${cGrams}g`;
+      document.getElementById('macroCarbsPct').textContent = `${Math.round(cRatio * 100)}%`;
+      document.getElementById('macroFats').textContent = `${fGrams}g`;
+      document.getElementById('macroFatsPct').textContent = `${Math.round(fRatio * 100)}%`;
+
+      document.getElementById('barProtein').style.width = `${pRatio * 100}%`;
+      document.getElementById('barCarbs').style.width = `${cRatio * 100}%`;
+      document.getElementById('barFats').style.width = `${fRatio * 100}%`;
+    }
+
+    // ROUTINE LOGIC GENERATOR
+    function switchDay(dayNum) {
+      profile.activeDay = dayNum;
+      renderWorkoutDay();
+    }
+
+    function getExerciseCount() {
+      // Rule 2: Thin -> 6, Bulking -> 7, Fatloss -> 6
+      if (profile.goal === 'bulking') return 7;
+      return 6; 
+    }
+
+    function getRepSetsText() {
+      // Target Sets & Reps Adjusted for Beginner/Medium/Advanced
+      if (profile.level === 'beginner') {
+        return { sets: "3 Sets", reps: "10-12 Reps", rest: "90s Rest" };
+      } else if (profile.level === 'medium') {
+        return { sets: "4 Sets", reps: "8-12 Reps", rest: "60s Rest" };
+      } else {
+        return { sets: "4-5 Sets", reps: "6-10 Reps (Heavy)", rest: "45-60s Rest" };
+      }
+    }
+
+    function getExercisesForDay(day) {
+      const count = getExerciseCount();
+      let list = [];
+
+      if (day === 1) {
+        // Chest & Biceps
+        const cCount = Math.ceil(count * 0.6); // 4 or 4
+        const bCount = count - cCount; // 2 or 3
+        list = [
+          ...MASTER_POOL.CHEST.slice(0, cCount),
+          ...MASTER_POOL.BICEPS.slice(0, bCount)
+        ];
+      } else if (day === 2) {
+        // Back & Triceps
+        const bkCount = Math.ceil(count * 0.6);
+        const tCount = count - bkCount;
+        list = [
+          ...MASTER_POOL.BACK.slice(0, bkCount),
+          ...MASTER_POOL.TRICEPS.slice(0, tCount)
+        ];
+      } else if (day === 3) {
+        // Shoulders & Abs
+        const sCount = Math.ceil(count * 0.65);
+        const aCount = count - sCount;
+        list = [
+          ...MASTER_POOL.SHOULDERS.slice(0, sCount),
+          ...MASTER_POOL.ABS.slice(0, aCount)
+        ];
+      } else if (day === 4) {
+        // Legs / Glutes option
+        if (profile.gender === 'female' && profile.femaleFocus === 'glutes') {
+          list = MASTER_POOL.LEGS_GLUTES_FEMALE.slice(0, count);
+        } else {
+          list = MASTER_POOL.LEGS_MALE.slice(0, count);
+        }
+      }
+
+      return list;
+    }
+
+    function renderWorkoutDay() {
+      // Update Tab Visuals
+      for (let i = 1; i <= 4; i++) {
+        const tab = document.getElementById(`tab-day${i}`);
+        if (i === profile.activeDay) {
+          tab.className = "day-tab px-4 py-2 text-xs font-bold rounded-lg bg-brand-500 text-gray-950 shadow transition whitespace-nowrap";
+        } else {
+          tab.className = "day-tab px-4 py-2 text-xs font-semibold rounded-lg text-gray-400 hover:text-white transition whitespace-nowrap";
+        }
+      }
+
+      // Fat loss notice box
+      const fatLossNotice = document.getElementById('fatLossNotice');
+      if (profile.goal === 'fatloss') {
+        fatLossNotice.classList.remove('hidden');
+      } else {
+        fatLossNotice.classList.add('hidden');
+      }
+
+      // Update Subtitle
+      const count = getExerciseCount();
+      const dayNames = {
+        1: "Chest & Biceps",
+        2: "Back & Triceps",
+        3: "Shoulders & Abs",
+        4: (profile.gender === 'female' && profile.femaleFocus === 'glutes') ? "Glutes & Lower Body" : "Legs Focus"
+      };
+      
+      document.getElementById('routineSubtitle').textContent = 
+        `Day ${profile.activeDay}: ${dayNames[profile.activeDay]} • ${count} Target Exercises • ${profile.level.toUpperCase()} intensity`;
+
+      // Build Cards
+      const container = document.getElementById('exerciseGrid');
+      container.innerHTML = '';
+
+      const exercises = getExercisesForDay(profile.activeDay);
+      const repConfig = getRepSetsText();
+
+      exercises.forEach((exName, idx) => {
+        // Image URL: Dynamic Google Image Search Link as strictly required
+        const searchUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(exName + ' workout form')}`;
+
+        const card = document.createElement('div');
+        card.className = "bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-700 transition flex flex-col justify-between group shadow-sm";
+        
+        card.innerHTML = `
+          <div>
+            <div class="flex items-start justify-between gap-2 mb-3">
+              <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-brand-500/10 text-brand-500 text-xs font-bold border border-brand-500/20">
+                ${idx + 1}
+              </span>
+              <span class="text-[11px] text-gray-400 font-mono bg-gray-800/80 px-2 py-0.5 rounded border border-gray-700">
+                ${repConfig.rest}
+              </span>
+            </div>
+
+            <h3 class="font-bold text-white text-base group-hover:text-brand-500 transition mb-2">
+              ${exName}
+            </h3>
+
+            <div class="flex items-center gap-3 text-xs text-gray-300 my-3 bg-gray-800/40 p-2.5 rounded-xl border border-gray-800">
+              <div class="flex items-center gap-1.5">
+                <i data-lucide="layers" class="w-3.5 h-3.5 text-brand-500"></i>
+                <span>${repConfig.sets}</span>
+              </div>
+              <span class="text-gray-600">•</span>
+              <div class="flex items-center gap-1.5">
+                <i data-lucide="repeat" class="w-3.5 h-3.5 text-brand-accent"></i>
+                <span>${repConfig.reps}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-gray-800/60 mt-2 flex items-center justify-between gap-2">
+            <!-- Google Search Fallback direct action -->
+            <button onclick="openModal('${exName.replace(/'/g, "\\'")}', '${searchUrl}')" class="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-gray-800 hover:bg-gray-700 text-xs font-medium text-gray-200 rounded-xl transition border border-gray-700">
+              <i data-lucide="image" class="w-3.5 h-3.5 text-brand-500"></i>
+              Demonstration
+            </button>
+            <a href="${searchUrl}" target="_blank" rel="noopener noreferrer" title="Direct Google Search" class="p-2 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white rounded-xl border border-gray-700 transition">
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            </a>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    // MODAL DIALOG CONTROLS
+    function openModal(exName, url) {
+      document.getElementById('modalExerciseTitle').textContent = exName;
+      document.getElementById('modalExerciseSearchTerm').textContent = `${exName} Workout Form`;
+      document.getElementById('modalSearchBtn').href = url;
+      document.getElementById('imageModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('imageModal').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
